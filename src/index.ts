@@ -28,23 +28,25 @@ app.get("/", (req: Request, res: Response) => {
 // get students (by program)
 app.get("/students", (req: Request, res: Response) => {
   try {
-    const program = req.query.program;
+    const { program, studentId } = req.query;
+    let filtered_students = students;
 
     if (program) {
-      let filtered_students = students.filter(
-        (student) => student.program === program,
+      filtered_students = filtered_students.filter(
+        (student) => student.program === String(program),
       );
-      return res.json({
-        success: true,
-        data: filtered_students,
-      });
-    } else {
-      return res.json({
-        success: true,
-        count: students.length,
-        data: students,
-      });
     }
+
+    if (studentId) {
+      filtered_students = filtered_students.filter(
+        (student) => String(student.studentId) === String(studentId),
+      );
+    }
+
+    return res.json({
+      success: true,
+      data: filtered_students,
+    });
   } catch (err) {
     return res.json({
       success: false,
@@ -156,7 +158,7 @@ app.delete("/students", (req: Request, res: Response) => {
     // validate req.body with predefined validator
     const result = zStudentDeleteBody.safeParse(body); // check zod
     if (!result.success) {
-      return res.json({
+      return res.status(400).json({
         message: "Validation failed",
         errors: result.error.issues[0]?.message,
       });
@@ -168,7 +170,7 @@ app.delete("/students", (req: Request, res: Response) => {
     );
 
     if (foundIndex === -1) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         message: "Student does not exists",
       });
@@ -178,13 +180,26 @@ app.delete("/students", (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      message: `${body.studentId} is delete`,
+      message: `Student Id ${body.studentId} has been deleted`,
       data: students,
     });
-  } catch (err) {}
+  } catch (err) {
+    return res.json({
+      success: false,
+      message: "Somthing is wrong, please try again",
+      error: err,
+    });
+  }
 });
 
 // GET /api/me
+app.get("/me", (req: Request, res: Response) => {
+  return res.json({
+    success: true,
+    fullName: "Sila Senapong",
+    StudentId: 670610429,
+  });
+});
 
 app.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
